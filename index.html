@@ -38,7 +38,7 @@
         display:flex;
         flex-direction:column;
         align-items:center;
-        max-width:800px;
+        max-width:900px;
         width: 100%;
         height: 100%;
         margin:0 auto;
@@ -65,8 +65,8 @@
     }
     
     #tetris-board {
-        width:min(300px, 85vw);
-        height:min(600px, 60vh);
+        width:min(360px, 90vw);
+        height:min(720px, 65vh);
         background:#1e1e1e;
         border:3px solid #333;
         position:relative;
@@ -78,7 +78,7 @@
     }
     
     .info-panel {
-        width:min(300px, 85vw);
+        width:min(360px, 90vw);
         display:flex;
         flex-wrap:wrap;
         justify-content:space-between;
@@ -103,8 +103,8 @@
     }
     
     #next-piece {
-        width:80px;
-        height:80px;
+        width:100px;
+        height:100px;
         margin:0 auto;
         background:#1e1e1e;
         position:relative;
@@ -151,8 +151,8 @@
         left:50%;
         transform:translate(-50%, -50%);
         width:85%;
-        max-width:240px;
-        background:rgba(0,0,0,0.9);
+        max-width:300px;
+        background:rgba(0,0,0,0.95);
         border:3px solid #444;
         border-radius:10px;
         display:flex;
@@ -163,20 +163,34 @@
         display:none;
         text-align:center;
         padding:30px 15px;
-        box-shadow:0 0 20px rgba(0,0,0,0.7);
+        box-shadow:0 0 30px rgba(0,0,0,0.8);
     }
     
     .game-over-text {
         font-size:24px;
         color:#ff2d55;
-        margin-bottom:15px;
+        margin-bottom:10px;
         font-weight:bold;
         width:100%;
         text-align:center;
     }
     
-    .final-score-message {
+    .performance-rating {
+        font-size:32px;
+        margin:10px 0;
+        font-weight:bold;
+        text-shadow: 0 0 20px currentColor;
+    }
+    
+    .rating-description {
         font-size:16px;
+        margin-bottom:20px;
+        color:#ddd;
+        font-style:italic;
+    }
+    
+    .final-score-message {
+        font-size:18px;
         margin-bottom:25px;
         color:#eee;
         width:100%;
@@ -307,9 +321,10 @@
     /* ----------  COLORS ---------- */
     .color-1{background:#ff2d55}.color-2{background:#5ac8fa}.color-3{background:#ffcc00}
     .color-4{background:#34c759}.color-5{background:#af52de}.color-6{background:#ff9500}.color-7{background:#007aff}
+    .color-8{background:#ff3b30}.color-9{background:#5856d6}.color-10{background:#00c7be}
     
     /* ----------  DESKTOP OVERRIDES ---------- */
-    @media (min-width:700px) {
+    @media (min-width:768px) {
         .title {
             font-size: 36px;
             margin-bottom: 20px;
@@ -324,12 +339,12 @@
         
         #tetris-board {
             margin: 0;
-            width: 300px;
-            height: 600px;
+            width: 360px;
+            height: 720px;
         }
         
         .info-panel {
-            width: 180px;
+            width: 200px;
             flex-direction: column;
             flex-wrap: nowrap;
         }
@@ -698,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let gameOverScreen;
 
     /* ---------- CONSTANTS ---------- */
-    const ROWS=20,COLS=10;
+    const ROWS=24,COLS=12; // Bigger board!
     let BLOCK_SIZE;
     const UPDATE_MS  = 1000;
 
@@ -706,15 +721,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let grid, currentPiece, nextPiece, score, level, totalLinesCleared;
     let gameInterval=null,isGameOver=false,isPaused=false;
 
-    /* ---------- SHAPES (intentionally awkward) ---------- */
+    /* ---------- SHAPES (even more crazy shapes!) ---------- */
     const SHAPES=[
+        // Original awkward pentominoes
         {blocks:[{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:1,y:2}],color:'color-1'},
         {blocks:[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:2,y:1},{x:2,y:2}],color:'color-2'},
         {blocks:[{x:1,y:0},{x:0,y:1},{x:2,y:1},{x:1,y:2}],color:'color-3'},
         {blocks:[{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:1,y:2}],color:'color-4'},
-        {blocks:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:2,y:2}],color:'color-5'},
-        {blocks:[{x:0,y:0},{x:2,y:0},{x:0,y:1},{x:2,y:1},{x:0,y:2},{x:1,y:2},{x:2,y:2}],color:'color-6'},
-        {blocks:[{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:2},{x:2,y:2}],color:'color-7'}
+        
+        // New crazy pentominoes
+        {blocks:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:3,y:0},{x:3,y:1}],color:'color-5'}, // Long L
+        {blocks:[{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:2,y:2}],color:'color-6'}, // Corner piece
+        {blocks:[{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:2,y:2}],color:'color-7'}, // Zigzag
+        {blocks:[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:2,y:2}],color:'color-8'}, // Snake
+        
+        // Hexominoes (6 blocks) - really crazy!
+        {blocks:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1}],color:'color-9'}, // Rectangle
+        {blocks:[{x:1,y:0},{x:1,y:1},{x:0,y:2},{x:1,y:2},{x:2,y:2},{x:1,y:3}],color:'color-10'}, // Cross
+        {blocks:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:3,y:0},{x:3,y:1},{x:3,y:2}],color:'color-1'}, // Big L
+        {blocks:[{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:2,y:2},{x:3,y:2}],color:'color-2'}, // Steps
+        
+        // Weird tetrominos (4 blocks)
+        {blocks:[{x:0,y:0},{x:1,y:0},{x:0,y:1},{x:0,y:2}],color:'color-3'}, // Backwards L
+        {blocks:[{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1}],color:'color-4'}, // T shape
+        
+        // Super weird shapes
+        {blocks:[{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:1,y:2},{x:1,y:3}],color:'color-5'}, // Long cross
+        {blocks:[{x:0,y:0},{x:2,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1}],color:'color-6'}, // U shape
     ];
 
     /* ---------- INITIALISE ---------- */
@@ -726,8 +759,10 @@ document.addEventListener('DOMContentLoaded', () => {
         board.style.height = `${ROWS * BLOCK_SIZE}px`;
 
         board.innerHTML=`<div class="game-over" style="display: none;">
-            <div class="game-over-text">0 lines completed!</div> 
-            <div class="final-score-message">You were as rubbish as anyone else at this game.</div>
+            <div class="game-over-text">Game Over!</div>
+            <div class="performance-rating"></div>
+            <div class="rating-description"></div>
+            <div class="final-score-message"></div>
             <button id="restart-button">Play Again</button>
         </div>`;
 
@@ -972,12 +1007,19 @@ document.addEventListener('DOMContentLoaded', () => {
         for(let y=ROWS-1;y>=0;y--){
             if(grid[y].every(cellColor => cellColor !== 0)){
                 linesClearedThisTurn++;
-                // Create a gap at random position (this is the "impossible" part)
-                const gapColumn = Math.floor(Math.random()*COLS);
-                grid[y][gapColumn] = 0;
                 
-                // Handle clearing the line with a gap
-                clearLineWithGap(y, gapColumn);
+                // 30% chance to create the "impossible" gap
+                if (Math.random() < 0.3) {
+                    // Create a gap at random position
+                    const gapColumn = Math.floor(Math.random()*COLS);
+                    grid[y][gapColumn] = 0;
+                    
+                    // Handle clearing the line with a gap
+                    clearLineWithGap(y, gapColumn);
+                } else {
+                    // Clear the full line normally
+                    clearFullLine(y);
+                }
                 
                 // Play sound effect
                 if (isAudioInitialized) {
@@ -990,6 +1032,15 @@ document.addEventListener('DOMContentLoaded', () => {
             score += (linesClearedThisTurn * 100) * linesClearedThisTurn;
             updateScore();
         }
+    }
+
+    function clearFullLine(yline) {
+        // Remove the line and move everything down
+        grid.splice(yline, 1);
+        grid.unshift(Array(COLS).fill(0));
+        
+        // Redraw all blocks
+        redrawAllBlocks();
     }
 
     function clearLineWithGap(yline, gapColumn){
@@ -1063,6 +1114,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getRating(lines) {
+        if (lines === 0) {
+            return {
+                rating: "💩",
+                color: "#8B4513",
+                description: "Absolutely hopeless. Did you even try?"
+            };
+        } else if (lines === 1) {
+            return {
+                rating: "😵",
+                color: "#ff0040",
+                description: "One line? That's... technically playing!"
+            };
+        } else if (lines <= 3) {
+            return {
+                rating: "😤",
+                color: "#ff3b30",
+                description: "You're getting there... slowly."
+            };
+        } else if (lines <= 5) {
+            return {
+                rating: "😐",
+                color: "#ff9500",
+                description: "Mediocre. Just like everyone else."
+            };
+        } else if (lines <= 7) {
+            return {
+                rating: "🤔",
+                color: "#ffcc00",
+                description: "Not bad! You're almost decent!"
+            };
+        } else if (lines <= 10) {
+            return {
+                rating: "😎",
+                color: "#34c759",
+                description: "Impressive! You might actually be good at this!"
+            };
+        } else if (lines <= 15) {
+            return {
+                rating: "🔥",
+                color: "#5ac8fa",
+                description: "Amazing! You're defying the impossible!"
+            };
+        } else if (lines <= 20) {
+            return {
+                rating: "🤯",
+                color: "#af52de",
+                description: "LEGENDARY! Are you even human?!"
+            };
+        } else {
+            return {
+                rating: "👽",
+                color: "#5856d6",
+                description: "IMPOSSIBLE! You've broken reality itself!"
+            };
+        }
+    }
+
     function gameOver(){
         if (isGameOver) return;
         isGameOver=true;
@@ -1076,9 +1185,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (gameOverScreen) {
             const gameOverTextEl = gameOverScreen.querySelector('.game-over-text');
+            const ratingEl = gameOverScreen.querySelector('.performance-rating');
+            const descriptionEl = gameOverScreen.querySelector('.rating-description');
+            const finalScoreEl = gameOverScreen.querySelector('.final-score-message');
+            
+            const rating = getRating(totalLinesCleared);
+            
             if (gameOverTextEl) {
                 gameOverTextEl.textContent = `${totalLinesCleared} line${totalLinesCleared === 1 ? '' : 's'} completed!`;
             }
+            
+            if (ratingEl) {
+                ratingEl.textContent = rating.rating;
+                ratingEl.style.color = rating.color;
+            }
+            
+            if (descriptionEl) {
+                descriptionEl.textContent = rating.description;
+            }
+            
+            if (finalScoreEl) {
+                finalScoreEl.textContent = `Final Score: ${score}`;
+            }
+            
             gameOverScreen.style.display='flex';
         }
         if (startButton) startButton.style.display = 'block';
